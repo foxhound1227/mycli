@@ -34,10 +34,10 @@ jobs:
             EOF
             
             # Create zipapp using Python's built-in zipapp module
-            /opt/python/cp38-cp38/bin/python -m zipapp /tmp/mycli_pkg -o mycli_linux -p '/usr/bin/env python3'
+            /opt/python/cp38-cp38/bin/python -m zipapp /tmp/mycli_pkg -o /workspace/mycli_linux -p '/usr/bin/env python3'
             
-            # Make it executable
-            chmod +x mycli_linux
+            # Make it executable and accessible (fix permissions for GA runner)
+            chmod 777 /workspace/mycli_linux
           "
 
     - name: Upload Binary Artifact
