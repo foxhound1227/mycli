@@ -22,13 +22,13 @@ jobs:
             # Use Python 3.8 from manylinux image
             /opt/python/cp38-cp38/bin/pip install --upgrade pip pex
             
-            # Install mycli and compatible importlib-metadata for Python 3.6
-            /opt/python/cp38-cp38/bin/pip install mycli 'importlib-metadata<5.0'
+            # Install mycli and specific version of importlib-metadata for Python 3.6
+            /opt/python/cp38-cp38/bin/pip install mycli importlib-metadata==4.13.0
             
             # Build executable using pex with Python 3.6 compatibility
             /opt/python/cp38-cp38/bin/pex \
               mycli \
-              'importlib-metadata<5.0' \
+              importlib-metadata==4.13.0 \
               -c mycli \
               -o mycli_linux \
               --python-shebang='/usr/bin/env python3' \
