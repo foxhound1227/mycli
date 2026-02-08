@@ -27,11 +27,11 @@ jobs:
             
             # Create __main__.py entry point
             cat > /tmp/mycli_pkg/__main__.py << 'EOF'
-#!/usr/bin/env python3
-from mycli.main import cli
-if __name__ == '__main__':
-    cli()
-EOF
+            #!/usr/bin/env python3
+            from mycli.main import cli
+            if __name__ == '__main__':
+                cli()
+            EOF
             
             # Create zipapp using Python's built-in zipapp module
             /opt/python/cp38-cp38/bin/python -m zipapp /tmp/mycli_pkg -o mycli_linux -p '/usr/bin/env python3'
