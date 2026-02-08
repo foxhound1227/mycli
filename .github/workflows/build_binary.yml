@@ -8,19 +8,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: quay.io/pypa/manylinux2014_x86_64  # Based on CentOS 7 (glibc 2.17 compatible)
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Install Dependencies & Build
+    - name: Build in Manylinux Container
       run: |
-        # Use Python 3.9 from manylinux image
-        /opt/python/cp39-cp39/bin/pip install --upgrade pip
-        /opt/python/cp39-cp39/bin/pip install -r requirements.txt
-        
-        # Build One-File Binary
-        /opt/python/cp39-cp39/bin/pyinstaller -F run_mycli.py --name mycli_linux --clean
+        docker run --rm \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          quay.io/pypa/manylinux2014_x86_64 \
+          bash -c "
+            # Use Python 3.9 from manylinux image
+            /opt/python/cp39-cp39/bin/pip install --upgrade pip
+            /opt/python/cp39-cp39/bin/pip install -r requirements.txt
+            
+            # Build One-File Binary
+            /opt/python/cp39-cp39/bin/pyinstaller -F run_mycli.py --name mycli_linux --clean
+          "
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
