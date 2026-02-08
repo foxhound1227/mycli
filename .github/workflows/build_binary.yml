@@ -25,8 +25,13 @@ jobs:
             # Install mycli and its dependencies including importlib-metadata for Python 3.6 compatibility
             /opt/python/cp38-cp38/bin/pip install mycli importlib-metadata
             
-            # Build self-contained zipapp using shiv with --python flag for compatibility
-            /opt/python/cp38-cp38/bin/shiv -c mycli -o mycli_linux --python '/usr/bin/env python3' mycli importlib-metadata
+            # Build self-contained zipapp using shiv with --site-packages to include all dependencies
+            /opt/python/cp38-cp38/bin/shiv \
+              --site-packages /opt/python/cp38-cp38/lib/python3.8/site-packages \
+              --compressed \
+              -p '/usr/bin/env python3' \
+              -o mycli_linux \
+              -e mycli.main:cli
             
             # Make it executable
             chmod +x mycli_linux
