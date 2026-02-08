@@ -19,16 +19,18 @@ jobs:
           -w /workspace \
           quay.io/pypa/manylinux2014_x86_64 \
           bash -c "
-            # Use Python 3.8 from manylinux image (has shared library support)
-            /opt/python/cp38-cp38/bin/pip install --upgrade pip
-            /opt/python/cp38-cp38/bin/pip install -r requirements.txt
+            # Use Python 3.8 from manylinux image
+            /opt/python/cp38-cp38/bin/pip install --upgrade pip shiv
             
-            # Build One-File Binary
-            /opt/python/cp38-cp38/bin/pyinstaller -F run_mycli.py --name mycli_linux --clean
+            # Build self-contained zipapp using shiv
+            /opt/python/cp38-cp38/bin/shiv -c mycli -o mycli_linux mycli
+            
+            # Make it executable
+            chmod +x mycli_linux
           "
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
       with:
         name: mycli_linux_binary
-        path: dist/mycli_linux
+        path: mycli_linux
