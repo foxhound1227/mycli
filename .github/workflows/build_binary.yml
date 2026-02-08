@@ -22,8 +22,11 @@ jobs:
             # Use Python 3.8 from manylinux image
             /opt/python/cp38-cp38/bin/pip install --upgrade pip shiv
             
-            # Build self-contained zipapp using shiv
-            /opt/python/cp38-cp38/bin/shiv -c mycli -o mycli_linux mycli
+            # Install mycli and its dependencies including importlib-metadata for Python 3.6 compatibility
+            /opt/python/cp38-cp38/bin/pip install mycli importlib-metadata
+            
+            # Build self-contained zipapp using shiv with --python flag for compatibility
+            /opt/python/cp38-cp38/bin/shiv -c mycli -o mycli_linux --python '/usr/bin/env python3' mycli importlib-metadata
             
             # Make it executable
             chmod +x mycli_linux
