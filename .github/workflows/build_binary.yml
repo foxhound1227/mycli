@@ -12,20 +12,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Create Wrapper Script
-      run: |
-        cat > mycli_wrapper.py << 'EOF'
-        #!/usr/bin/env python3
-        from mycli.main import cli
-        if __name__ == '__main__':
-            try:
-                cli()
-            except Exception as e:
-                print(f"Error: {e}")
-                import traceback
-                traceback.print_exc()
-        EOF
-
     - name: Build in Manylinux Container
       run: |
         # Use a consistent container name
@@ -38,36 +24,37 @@ jobs:
             # Use Python 3.8 from manylinux image
             /opt/python/cp38-cp38/bin/pip install --upgrade pip
             
-            # Install mycli and PyInstaller
-            /opt/python/cp38-cp38/bin/pip install mycli pyinstaller 'importlib-metadata<5.0'
+            # Install mycli and dependencies to a temp directory
+            # importlib-metadata==4.13.0 is compatible with Python 3.6+
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg mycli importlib-metadata==4.13.0
             
-            # Build standalone executable with PyInstaller
-            cd /tmp
-            # Use --collect-all to grab all data files and hidden imports for mycli
-            # Remove --strip for safety
-            /opt/python/cp38-cp38/bin/python -m PyInstaller --onefile --clean --name mycli_linux --collect-all mycli mycli_wrapper.py
+            # Create __main__.py entry point using printf
+            printf \"#!/usr/bin/env python3\nfrom mycli.main import cli\nif __name__ == '__main__':\n    cli()\n\" > /tmp/mycli_pkg/__main__.py
             
-            # Verify the binary exists in dist folder
-            ls -la /tmp/dist/mycli_linux
+            # Create zipapp using Python's built-in zipapp module
+            /opt/python/cp38-cp38/bin/python -m zipapp /tmp/mycli_pkg -o /tmp/mycli_linux -p '/usr/bin/env python3'
+            
+            # Make it executable
+            chmod +x /tmp/mycli_linux
+            
+            # Verify the binary exists
+            ls -la /tmp/mycli_linux
           "
         
-        # 2. Copy the wrapper script into the container
-        docker cp mycli_wrapper.py $CONTAINER_NAME:/tmp/mycli_wrapper.py
-        
-        # 3. Start the container and wait for it to finish
+        # 2. Start the container and wait for it to finish
         docker start -a $CONTAINER_NAME
         
-        # 4. Copy the binary out of the container (PyInstaller puts it in dist/)
-        docker cp $CONTAINER_NAME:/tmp/dist/mycli_linux .
+        # 3. Copy the binary out of the container
+        docker cp $CONTAINER_NAME:/tmp/mycli_linux .
         
-        # 5. Clean up
+        # 4. Clean up
         docker rm $CONTAINER_NAME
         
-        # 6. Verify file exists
+        # 5. Verify file exists
         ls -la mycli_linux
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mycli_linux_standalone_binary
+        name: mycli_linux_binary
         path: mycli_linux
