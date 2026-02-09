@@ -43,7 +43,9 @@ jobs:
             
             # Build standalone executable with PyInstaller
             cd /tmp
-            /opt/python/cp38-cp38/bin/pyinstaller --onefile --clean --strip --name mycli_linux --hidden-import=configobj --hidden-import=sqlglot mycli_wrapper.py
+            # Use --collect-all to grab all data files and hidden imports for mycli
+            # Remove --strip for safety
+            /opt/python/cp38-cp38/bin/python -m PyInstaller --onefile --clean --name mycli_linux --collect-all mycli mycli_wrapper.py
             
             # Verify the binary exists in dist folder
             ls -la /tmp/dist/mycli_linux
