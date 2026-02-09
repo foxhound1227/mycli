@@ -19,7 +19,7 @@ jobs:
         
         # 1. Create the container (do not run yet)
         docker create --name $CONTAINER_NAME \
-          quay.io/pypa/manylinux2014_x86_64 \
+          quay.io/pypa/manylinux2010_x86_64 \
           bash -c "
             set -ex
             
