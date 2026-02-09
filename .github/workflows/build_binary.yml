@@ -28,8 +28,8 @@ jobs:
             
             # Install dependencies first (excluding mycli)
             # importlib-metadata 4.8.3 is the LAST version to support Python 3.6
-            # zipp 3.6.0 is compatible with Python 3.6
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg 'importlib-metadata==4.8.3' 'zipp==3.6.0' cryptography configobj sqlglot
+            # zipp 3.4.1 is compatible with Python 3.6 (3.5+ drops it)
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg 'importlib-metadata==4.8.3' 'zipp==3.4.1' cryptography configobj sqlglot
             # Install other potential dependencies usually pulled by mycli
             /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg cli_helpers click configobj prompt_toolkit pygments sqlparse
             
