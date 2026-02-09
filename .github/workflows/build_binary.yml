@@ -12,6 +12,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Create Wrapper Script
+      run: |
+        cat > mycli_wrapper.py << 'EOF'
+        #!/usr/bin/env python3
+        from mycli.main import cli
+        if __name__ == '__main__':
+            try:
+                cli()
+            except Exception as e:
+                print(f"Error: {e}")
+                import traceback
+                traceback.print_exc()
+        EOF
+
     - name: Build in Manylinux Container
       run: |
         # Use a consistent container name
@@ -25,17 +39,9 @@ jobs:
             /opt/python/cp38-cp38/bin/pip install --upgrade pip
             
             # Install mycli and PyInstaller
-            # We enforce importlib-metadata<5.0 just in case, though PyInstaller bundles its own runtime
             /opt/python/cp38-cp38/bin/pip install mycli pyinstaller 'importlib-metadata<5.0'
             
-            # Create a wrapper script for PyInstaller
-            printf \"#!/usr/bin/env python3\nfrom mycli.main import cli\nif __name__ == '__main__':\n    cli()\n\" > /tmp/mycli_wrapper.py
-            
             # Build standalone executable with PyInstaller
-            # --onefile: Create a single executable file
-            # --name: Name of the executable
-            # --clean: Clean PyInstaller cache
-            # --strip: Strip symbols to reduce size
             cd /tmp
             /opt/python/cp38-cp38/bin/pyinstaller --onefile --clean --strip --name mycli_linux --hidden-import=configobj --hidden-import=sqlglot mycli_wrapper.py
             
@@ -43,16 +49,19 @@ jobs:
             ls -la /tmp/dist/mycli_linux
           "
         
-        # 2. Start the container and wait for it to finish
+        # 2. Copy the wrapper script into the container
+        docker cp mycli_wrapper.py $CONTAINER_NAME:/tmp/mycli_wrapper.py
+        
+        # 3. Start the container and wait for it to finish
         docker start -a $CONTAINER_NAME
         
-        # 3. Copy the binary out of the container (PyInstaller puts it in dist/)
+        # 4. Copy the binary out of the container (PyInstaller puts it in dist/)
         docker cp $CONTAINER_NAME:/tmp/dist/mycli_linux .
         
-        # 4. Clean up
+        # 5. Clean up
         docker rm $CONTAINER_NAME
         
-        # 5. Verify file exists
+        # 6. Verify file exists
         ls -la mycli_linux
 
     - name: Upload Binary Artifact
