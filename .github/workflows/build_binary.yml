@@ -24,24 +24,30 @@ jobs:
             # Use Python 3.8 from manylinux image
             /opt/python/cp38-cp38/bin/pip install --upgrade pip
             
-            # Install mycli and dependencies to a temp directory
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg mycli importlib-metadata==4.13.0
+            # Install mycli and PyInstaller
+            # We enforce importlib-metadata<5.0 just in case, though PyInstaller bundles its own runtime
+            /opt/python/cp38-cp38/bin/pip install mycli pyinstaller 'importlib-metadata<5.0'
             
-            # Create __main__.py entry point using printf to avoid heredoc issues
-            printf "#!/usr/bin/env python3\nfrom mycli.main import cli\nif __name__ == '__main__':\n    cli()\n" > /tmp/mycli_pkg/__main__.py
+            # Create a wrapper script for PyInstaller
+            printf \"#!/usr/bin/env python3\nfrom mycli.main import cli\nif __name__ == '__main__':\n    cli()\n\" > /tmp/mycli_wrapper.py
             
-            # Create zipapp using Python's built-in zipapp module. Output to /tmp inside container.
-            /opt/python/cp38-cp38/bin/python -m zipapp /tmp/mycli_pkg -o /tmp/mycli_linux -p '/usr/bin/env python3'
+            # Build standalone executable with PyInstaller
+            # --onefile: Create a single executable file
+            # --name: Name of the executable
+            # --clean: Clean PyInstaller cache
+            # --strip: Strip symbols to reduce size
+            cd /tmp
+            /opt/python/cp38-cp38/bin/pyinstaller --onefile --clean --strip --name mycli_linux --hidden-import=configobj --hidden-import=sqlglot mycli_wrapper.py
             
-            # Make it executable
-            chmod +x /tmp/mycli_linux
+            # Verify the binary exists in dist folder
+            ls -la /tmp/dist/mycli_linux
           "
         
         # 2. Start the container and wait for it to finish
         docker start -a $CONTAINER_NAME
         
-        # 3. Copy the binary out of the container
-        docker cp $CONTAINER_NAME:/tmp/mycli_linux .
+        # 3. Copy the binary out of the container (PyInstaller puts it in dist/)
+        docker cp $CONTAINER_NAME:/tmp/dist/mycli_linux .
         
         # 4. Clean up
         docker rm $CONTAINER_NAME
@@ -52,5 +58,5 @@ jobs:
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mycli_linux_binary
+        name: mycli_linux_standalone_binary
         path: mycli_linux
