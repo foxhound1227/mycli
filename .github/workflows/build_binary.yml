@@ -18,20 +18,22 @@ jobs:
         CONTAINER_NAME="mycli_builder"
         
         # 1. Create the container (do not run yet)
+        # Use a specific 2023 tag that still contains Python 3.6
         docker create --name $CONTAINER_NAME \
-          quay.io/pypa/manylinux2010_x86_64 \
+          quay.io/pypa/manylinux2014_x86_64:2023-08-14-1e56d44 \
           bash -c "
             set -ex
             
             # Use Python 3.6 from manylinux image
             /opt/python/cp36-cp36m/bin/pip install --upgrade pip
             
-            # Create constraints file to prevent upgrades
-            echo "importlib-metadata==4.8.3" > constraints.txt
-            echo "zipp==3.1.0" >> constraints.txt
+            # Create constraints file to prevent upgrades and avoid Rust requirements
+            echo \"importlib-metadata==4.8.3\" > constraints.txt
+            echo \"zipp==3.1.0\" >> constraints.txt
+            echo \"cryptography==36.0.2\" >> constraints.txt
             
             # Install dependencies with constraints
-            /opt/python/cp36-cp36m/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt 'importlib-metadata' 'zipp' cryptography configobj sqlglot
+            /opt/python/cp36-cp36m/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt 'importlib-metadata' 'zipp' 'cryptography' configobj sqlglot
             
             # Install other dependencies ensuring constraints are respected
             /opt/python/cp36-cp36m/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt cli_helpers click configobj prompt_toolkit pygments sqlparse
