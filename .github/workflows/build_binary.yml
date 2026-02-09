@@ -21,14 +21,32 @@ jobs:
         docker create --name $CONTAINER_NAME \
           quay.io/pypa/manylinux2014_x86_64 \
           bash -c "
+            set -ex
+            
             # Use Python 3.8 from manylinux image
             /opt/python/cp38-cp38/bin/pip install --upgrade pip
             
-            # Install mycli and dependencies to a temp directory
-            # importlib-metadata==4.13.0 is compatible with Python 3.6+
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg mycli importlib-metadata==4.13.0
+            # Install dependencies first (excluding mycli)
+            # Ensure importlib-metadata is installed for the backport
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg 'importlib-metadata==4.13.0' cryptography configobj sqlglot
+            # Install other potential dependencies usually pulled by mycli
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg cli_helpers click configobj prompt_toolkit pygments sqlparse
             
-            # Create __main__.py entry point using printf
+            # Download mycli source
+            cd /tmp
+            /opt/python/cp38-cp38/bin/pip download --no-binary mycli --no-deps mycli
+            tar -xf mycli-*.tar.gz
+            cd mycli-*
+            
+            # PATCH: Replace 'importlib.metadata' with 'importlib_metadata' for Python 3.6 compatibility
+            # This forces the usage of the backport package we installed
+            find . -name '*.py' -exec sed -i 's/from importlib.metadata/from importlib_metadata/g' {} +
+            find . -name '*.py' -exec sed -i 's/import importlib.metadata/import importlib_metadata/g' {} +
+            
+            # Install the patched mycli into the package directory
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg .
+            
+            # Create __main__.py entry point
             printf \"#!/usr/bin/env python3\nfrom mycli.main import cli\nif __name__ == '__main__':\n    cli()\n\" > /tmp/mycli_pkg/__main__.py
             
             # Create zipapp using Python's built-in zipapp module
@@ -52,6 +70,7 @@ jobs:
         
         # 5. Verify file exists
         ls -la mycli_linux
+
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
