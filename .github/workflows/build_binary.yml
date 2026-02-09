@@ -23,22 +23,22 @@ jobs:
           bash -c "
             set -ex
             
-            # Use Python 3.8 from manylinux image
-            /opt/python/cp38-cp38/bin/pip install --upgrade pip
+            # Use Python 3.6 from manylinux image
+            /opt/python/cp36-cp36m/bin/pip install --upgrade pip
             
             # Create constraints file to prevent upgrades
             echo "importlib-metadata==4.8.3" > constraints.txt
             echo "zipp==3.1.0" >> constraints.txt
             
             # Install dependencies with constraints
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt 'importlib-metadata' 'zipp' cryptography configobj sqlglot
+            /opt/python/cp36-cp36m/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt 'importlib-metadata' 'zipp' cryptography configobj sqlglot
             
             # Install other dependencies ensuring constraints are respected
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt cli_helpers click configobj prompt_toolkit pygments sqlparse
+            /opt/python/cp36-cp36m/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt cli_helpers click configobj prompt_toolkit pygments sqlparse
             
             # Download mycli source
             cd /tmp
-            /opt/python/cp38-cp38/bin/pip download --no-binary mycli --no-deps mycli
+            /opt/python/cp36-cp36m/bin/pip download --no-binary mycli --no-deps mycli
             tar -xf mycli-*.tar.gz
             cd mycli-*
             
@@ -48,13 +48,13 @@ jobs:
             find . -name '*.py' -exec sed -i 's/import importlib.metadata/import importlib_metadata/g' {} +
             
             # Install the patched mycli into the package directory
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg .
+            /opt/python/cp36-cp36m/bin/pip install --target=/tmp/mycli_pkg .
             
             # Create __main__.py entry point
             printf \"#!/usr/bin/env python3\nfrom mycli.main import cli\nif __name__ == '__main__':\n    cli()\n\" > /tmp/mycli_pkg/__main__.py
             
             # Create zipapp using Python's built-in zipapp module
-            /opt/python/cp38-cp38/bin/python -m zipapp /tmp/mycli_pkg -o /tmp/mycli_linux -p '/usr/bin/env python3'
+            /opt/python/cp36-cp36m/bin/python -m zipapp /tmp/mycli_pkg -o /tmp/mycli_linux -p '/usr/bin/env python3'
             
             # Make it executable
             chmod +x /tmp/mycli_linux
