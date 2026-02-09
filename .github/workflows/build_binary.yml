@@ -26,12 +26,15 @@ jobs:
             # Use Python 3.8 from manylinux image
             /opt/python/cp38-cp38/bin/pip install --upgrade pip
             
-            # Install dependencies first (excluding mycli)
-            # importlib-metadata 4.8.3 is the LAST version to support Python 3.6
-            # zipp 3.1.0 is definitely compatible with Python 3.6 and likely avoids 3.8+ syntax issues
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg 'importlib-metadata==4.8.3' 'zipp==3.1.0' cryptography configobj sqlglot
-            # Install other potential dependencies usually pulled by mycli
-            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg cli_helpers click configobj prompt_toolkit pygments sqlparse
+            # Create constraints file to prevent upgrades
+            echo "importlib-metadata==4.8.3" > constraints.txt
+            echo "zipp==3.1.0" >> constraints.txt
+            
+            # Install dependencies with constraints
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt 'importlib-metadata' 'zipp' cryptography configobj sqlglot
+            
+            # Install other dependencies ensuring constraints are respected
+            /opt/python/cp38-cp38/bin/pip install --target=/tmp/mycli_pkg -c constraints.txt cli_helpers click configobj prompt_toolkit pygments sqlparse
             
             # Download mycli source
             cd /tmp
